@@ -11,6 +11,22 @@ from model import *
 import cv2
 
 
+def select_device(cuda_index):
+    if not torch.cuda.is_available():
+        return torch.device("cpu")
+    try:
+        capability = torch.cuda.get_device_capability(cuda_index)
+        device_arch = f"sm_{capability[0]}{capability[1]}"
+        supported_arches = set(torch.cuda.get_arch_list())
+        if device_arch not in supported_arches:
+            print(f"CUDA arch {device_arch} is not supported by this PyTorch build. Falling back to CPU.")
+            return torch.device("cpu")
+        return torch.device(f"cuda:{cuda_index}")
+    except Exception as exc:
+        print(f"CUDA check failed ({exc}). Falling back to CPU.")
+        return torch.device("cpu")
+
+
 class Estimator:
     def __init__(self, cfg):
         parser = argparse.ArgumentParser()
@@ -21,12 +37,17 @@ class Estimator:
 
         # parameters
         model_name = args.model_name if args.model_name is not None else cfg['model_list'][cfg['model_choice']][0]
-        model_layer = args.model_layer if args.model_name is not None else cfg['model_list'][cfg['model_choice']][1]
+        model_layer = args.model_layer if args.model_layer is not None else cfg['model_list'][cfg['model_choice']][1]
         model_type = model_name + '-' + str(model_layer)
         cuda_index = args.cuda_index if args.cuda_index is not None else cfg['cuda_index']
 
         # model configuration
-        self.device = torch.device(f"cuda:{cuda_index}" if torch.cuda.is_available() else "cpu")
+        self.device = select_device(cuda_index)
+        if self.device.type == 'cuda':
+            print(f"Estimator is running on GPU: {torch.cuda.get_device_name(self.device)}")
+        else:
+            print("Estimator is running on CPU.")
+
         if model_name == 'Resnet':
             self.model = Resnet(layer=int(model_layer), pretrained=False).to(self.device)
         elif model_name == 'Densenet':
@@ -34,7 +55,11 @@ class Estimator:
 
         self.save_dir = cfg['save_dir'] + '/' + model_type + str(cfg['weights'][cfg['model_choice']][0])
         weights_path = self.save_dir + '/epoch_' + str(cfg['weights'][cfg['model_choice']][1]) + '.pt'
-        self.model.load_state_dict(torch.load(weights_path, map_location=self.device))
+        try:
+            state_dict = torch.load(weights_path, map_location=self.device, weights_only=True)
+        except TypeError:
+            state_dict = torch.load(weights_path, map_location=self.device)
+        self.model.load_state_dict(state_dict)
         self.model.eval()
         # inferring the first image takes more time than the latter images, so we pass it
         with torch.no_grad():
@@ -76,6 +101,3 @@ if __name__ == '__main__':
     input_image[::, ::, 0] = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     predicted_force = estimator.predict_force(input_image)
     print(predicted_force)
-
-
-

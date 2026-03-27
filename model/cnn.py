@@ -1,20 +1,35 @@
 from torchvision import models
+from torchvision.models import (
+    ResNet18_Weights,
+    ResNet34_Weights,
+    ResNet50_Weights,
+    ResNet101_Weights,
+    DenseNet121_Weights,
+    DenseNet161_Weights,
+    DenseNet169_Weights,
+    DenseNet201_Weights,
+)
 import torch
 from torch import nn
 
 
 def Resnet(layer=50, pretrained=True):
+    weights = None
     if layer == 18:
-        model = models.resnet18(pretrained=pretrained)
+        weights = ResNet18_Weights.DEFAULT if pretrained else None
+        model = models.resnet18(weights=weights)
         print('use Resnet-18')
     elif layer == 34:
-        model = models.resnet34(pretrained=pretrained)
+        weights = ResNet34_Weights.DEFAULT if pretrained else None
+        model = models.resnet34(weights=weights)
         print('use Resnet-34')
     elif layer == 50:
-        model = models.resnet50(pretrained=pretrained)
+        weights = ResNet50_Weights.DEFAULT if pretrained else None
+        model = models.resnet50(weights=weights)
         print('use Resnet-50')
     else:
-        model = models.resnet101(pretrained=pretrained)
+        weights = ResNet101_Weights.DEFAULT if pretrained else None
+        model = models.resnet101(weights=weights)
         print('use Resnet-101')
     num_in_features = model.fc.in_features
     model.fc = nn.Linear(num_in_features, 6)
@@ -22,17 +37,22 @@ def Resnet(layer=50, pretrained=True):
 
 
 def Densenet(layer=169, pretrained=True):
+    weights = None
     if layer == 121:
-        model = models.densenet121(pretrained=pretrained)
+        weights = DenseNet121_Weights.DEFAULT if pretrained else None
+        model = models.densenet121(weights=weights)
         print('use Densenet-121')
     elif layer == 161:
         print('use Densenet-161')
-        model = models.densenet161(pretrained=pretrained)
+        weights = DenseNet161_Weights.DEFAULT if pretrained else None
+        model = models.densenet161(weights=weights)
     elif layer == 169:
-        model = models.densenet169(pretrained=pretrained)
+        weights = DenseNet169_Weights.DEFAULT if pretrained else None
+        model = models.densenet169(weights=weights)
         print('use Densenet-169')
     else:
-        model = models.densenet201(pretrained=pretrained)
+        weights = DenseNet201_Weights.DEFAULT if pretrained else None
+        model = models.densenet201(weights=weights)
         print('use Densenet-201')
     num_in_features = model.classifier.in_features
     model.classifier = nn.Linear(num_in_features, 6)

@@ -2,8 +2,12 @@ import numpy as np
 import open3d
 from open3d import *
 from math import sqrt
-import rospy
-from geometry_msgs.msg import WrenchStamped
+try:
+    import rospy
+    from geometry_msgs.msg import WrenchStamped
+except ImportError:
+    rospy = None
+    WrenchStamped = None
 
 final_force = False
 reference_frame = False
@@ -198,6 +202,8 @@ class Visualizer:
 
 
 if __name__ == '__main__':
+    if rospy is None or WrenchStamped is None:
+        raise ImportError("ROS dependencies are missing. Install rospy and geometry_msgs to run ROS visualization mode.")
     visualizer = Visualizer()
     rospy.init_node('force_visualization')
     predicted_force_sub = rospy.Subscriber('/predicted_wrench', WrenchStamped, visualizer.ros_callback)

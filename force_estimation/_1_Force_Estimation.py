@@ -18,20 +18,35 @@ if __name__ == '__main__':
     estimator = Estimator(force_config)
     visualizer = Visualizer()
 
+    print("Press 'q' to quit. Press 'g' to toggle standalone gel flow view.")
+    show_gel_only = True
+
     while sensor.cap.isOpened():
         image = sensor.get_rectify_crop_image()
-        cv2.imshow('image', image)
-        representation, _ = sensor.raw_image_2_representation(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
-        cv2.imshow('representation', representation)
+        img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        representation, mixed_visualization = sensor.raw_image_2_representation(img_gray)
+        # mixed_visualization is the red/green gel-flow style view used in ROS demos.
+        cv2.imshow('Raw Image', image)
+        cv2.imshow('Deformation Representation', representation)
+        cv2.imshow('Gel Flow (mixed_visualization)', mixed_visualization)
+
+        if show_gel_only:
+            gel_flow = sensor.visualize_gel_deformation(image)
+            cv2.imshow('Gel Flow (standalone)', gel_flow)
+        else:
+            cv2.destroyWindow('Gel Flow (standalone)')
+
         force = estimator.predict_force(representation)
 
         key = cv2.waitKey(1)
         if key == ord('q'):
             break
+        if key == ord('g'):
+            show_gel_only = not show_gel_only
+
         if not visualizer.vis.poll_events():
             break
-        else:
-            visualizer.update_force(force)
+        visualizer.update_force(force)
 
-
-
+    cv2.destroyAllWindows()
