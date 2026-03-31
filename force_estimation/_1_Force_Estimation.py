@@ -9,12 +9,15 @@ from force_estimation import Estimator
 from force_estimation import Visualizer
 
 if __name__ == '__main__':
-    shape_file = open("../shape_reconstruction/shape_config.yaml", 'r+', encoding='utf-8')
-    shape_config = yaml.load(shape_file, Loader=yaml.FullLoader)
-    sensor = Sensor(shape_config)
-
     force_file = open("force_config.yaml", 'r+', encoding='utf-8')
     force_config = yaml.load(force_file, Loader=yaml.FullLoader)
+
+    shape_file = open("../shape_reconstruction/shape_config.yaml", 'r+', encoding='utf-8')
+    shape_config = yaml.load(shape_file, Loader=yaml.FullLoader)
+    if 'camera_channel' in force_config:
+        shape_config['camera_setting']['camera_channel'] = force_config['camera_channel']
+    sensor = Sensor(shape_config)
+
     estimator = Estimator(force_config)
     visualizer = Visualizer()
 

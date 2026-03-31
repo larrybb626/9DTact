@@ -7,13 +7,24 @@ class Camera:
     def __init__(self, cfg, calibrated=True):
         sensor_id = cfg['sensor_id']
         camera_setting = cfg['camera_setting']
-        camera_channel = camera_setting['camera_channel']
+        camera_channel = camera_setting.get('camera_channel', camera_setting.get('camera_id'))
+        if camera_channel is None:
+            raise KeyError(
+                "camera_setting 中缺少 camera_channel（兼容键名: camera_id）。"
+                "请在 shape_reconstruction/shape_config.yaml 中设置摄像头通道。"
+            )
         raw_img_width = camera_setting['resolution'][0]
         raw_img_height = camera_setting['resolution'][1]
         fps = camera_setting['fps']
         self.cap = cv2.VideoCapture(camera_channel)
         if self.cap.isOpened():
             print('------Camera is open--------')
+        else:
+            raise RuntimeError(
+                f"无法打开摄像头通道: {camera_channel}。"
+                "请检查 shape_reconstruction/shape_config.yaml 中 "
+                "camera_setting.camera_channel（或 camera_id）以及设备是否存在。"
+            )
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, raw_img_width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, raw_img_height)
         self.cap.set(cv2.CAP_PROP_FPS, fps)
