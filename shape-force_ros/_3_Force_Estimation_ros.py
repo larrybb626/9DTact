@@ -38,7 +38,18 @@ class ForceROS:
 
 
 if __name__ == '__main__':
-    f = open("../force_estimation/force_config.yaml", 'r+', encoding='utf-8')
-    cfg = yaml.load(f, Loader=yaml.FullLoader)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_path = os.path.join(script_dir, "..", "force_estimation", "force_config.yaml")
+    if not os.path.exists(cfg_path):
+        raise FileNotFoundError(
+            f"Cannot find force config: {cfg_path}. "
+            "Please run this script from the repository with a valid force_estimation/force_config.yaml."
+        )
+
+    # Remove ROS remapping arguments (e.g. __name:=...) before Estimator argparse parsing.
+    sys.argv = rospy.myargv(argv=sys.argv)
+
+    with open(cfg_path, 'r', encoding='utf-8') as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
     force_ros = ForceROS(cfg)
     force_ros.run()
